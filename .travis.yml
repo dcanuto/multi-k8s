@@ -1,0 +1,21 @@
+services:
+  - docker
+
+before_install:
+  - docker build -t dannycanuto/react-test -f ./client/Dockerfile.dev ./client
+
+script:
+  - docker run -e CI=true dannycanuto/react-test npm test
+
+after_success:
+  - docker build -t dannycanuto/multi-client ./client
+  - docker build -t dannycanuto/multi-nginx ./nginx
+  - docker build -t dannycanuto/multi-server ./server
+  - docker build -t dannycanuto/multi-worker ./worker
+  # Login to Docker CLI using environment variables saved in Travis CI dashboard
+  - echo "$DOCKER_PASSWORD" | docker login -u "$DOCKER_ID" --password-stdin
+  # Take images and push to Docker Hub
+  - docker push dannycanuto/multi-client
+  - docker push dannycanuto/multi-nginx
+  - docker push dannycanuto/multi-server
+  - docker push dannycanuto/multi-worker
